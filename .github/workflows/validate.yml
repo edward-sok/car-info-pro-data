@@ -1,0 +1,26 @@
+name: Validate data
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generated file is up to date
+        run: |
+          python3 gen_vehicles.py /tmp/generated.json
+          python3 - <<'PY'
+          import json
+          a = json.load(open("vehicles.json")); b = json.load(open("/tmp/generated.json"))
+          a.pop("updated"); b.pop("updated")
+          assert a == b, "vehicles.json doesn't match gen_vehicles.py; regenerate it"
+          PY
+      - name: Validate
+        run: python3 validate.py vehicles.json
